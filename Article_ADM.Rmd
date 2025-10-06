@@ -43,10 +43,7 @@ path <- "~/Article_ADM/article_data" # CHANGE ME to the directory containing the
 list.files(path)
 ```
 
-# pour unzip les fastq.gz en fastq, il faut utiliser la commande suivante dans la console
-```{r}
- system("gunzip ~/Article_ADM/article_data/*.gz")
-```
+# pour unzip les fastq.gz en fastq, il faut utiliser la commande suivante dans la console "system("gunzip ~/Article_ADM/article_data/*.gz")"
 
 
 ```{r}
@@ -84,4 +81,3 @@ head(out)
 errF <- learnErrors(filtFs, multithread=FALSE)
 ```
 
-gjyn
