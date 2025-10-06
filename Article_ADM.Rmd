@@ -81,3 +81,7 @@ head(out)
 errF <- learnErrors(filtFs, multithread=FALSE)
 ```
 
+```{r}
+errR <- learnErrors(filtRs, multithread=TRUE)
+```
+
