@@ -8,43 +8,39 @@ date: "2025-10-05"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+# I. Préparation de l'environnement
+## 1. Le chargement de la librairie
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
-```{r}
+```{r, echo=FALSE}
 library(dada2); packageVersion("dada2")
 ```
 
-# il faut en premier lieu importer les fichiers fastq de ENA en utilisant le shortcut "upload" de R studio après avoir installer les fichiers 
+## 2. Importation des données
 
-```{r}
+Les fichiers FastQ.gz sont importés en utilisant le shortcut "upload" de R studio après avoir les avoir téléchargé de l'ENA (European Nucleotide Archive).
+
+```{r, echo=FALSE}
 metadata <- read.csv2("~/Article_ADM/SraRunTable.csv", header = TRUE, sep = ",")
 ```
 
-```{r}
-path <- "~/Article_ADM/article_data" # CHANGE ME to the directory containing the fastq files after unzipping.
+Les fichiers FastQ.gz sont ensuite rendus accessibles.
+
+system("gunzip ~/Article_ADM/article_data/*.gz")
+
+
+
+## 3. Définir le chemin vers les fichiers FastQ
+
+```{r, echo=FALSE}
+path <- "~/Article_ADM" # CHANGE ME to the directory containing the fastq files after unzipping.
 list.files(path)
 ```
 
-# pour unzip les fastq.gz en fastq, il faut utiliser la commande suivante dans la console "system("gunzip ~/Article_ADM/article_data/*.gz")"
+## 4. Organisation des fichiers FastQ
 
+Les fichiers FastQ sont ensuite triés en reads forward et reverse. Les reads forward sont indiqués par le présence de "_1" et les reads reverse, eux, par la présence de "_2".
+
+Les noms des fichiers sont ensuite extraits afin de faciliter la manipulation des données.
 
 ```{r}
 # Forward and reverse fastq filenames have format: SAMPLENAME_R1_001.fastq and SAMPLENAME_R2_001.fastq
@@ -54,13 +50,25 @@ fnRs <- sort(list.files(path, pattern="_2.fastq", full.names = TRUE))
 sample.names <- sapply(strsplit(basename(fnFs), "_"), `[`, 1)
 ```
 
+# II. Évaluation de la qualité
+
+La qualité des données de séquençage est ensuite évaluée en analysant l'évaluation des Qscore le long des lectures. 
+
 ```{r}
 plotQualityProfile(fnFs[1:2])
 ```
 
+Les reads forward des échantillons SRR29455238 et SRR29455239 sont de bonne qualité jusqu'à environ 200 cycles de séquençage, avec un Qscore de plus de 30. Cependant, la qualité des reads diminue rapidement aux alentours des 200 cycles avec une forte instabilité de lecture à partir de 250 cycles.
+
 ```{r}
 plotQualityProfile(fnRs[1:2])
 ```
+Ces derniers graphiques indiquent que la qualité des reads reverse des échantillons SRR29455238 et SRR29455239 se détériore plus rapidement que celle des reads forward. À partir 150 cycles de séquençage, nous remarquons que le Qscore diminue rapidement.
+
+# III. Filtrage et rognage
+
+Les profiles de qualité obtenus nous permettent par la suite de définir les paramètres de tronquage. Les séquences doivent être tronquées avant l'effondrement de la qualité afin de conserver la qualité des reads tout en gardant une longueur qui permettra le chevauchement des reads forward et reverse.
+
 
 ```{r}
 # Place filtered files in filtered/ subdirectory
@@ -70,18 +78,150 @@ names(filtFs) <- sample.names
 names(filtRs) <- sample.names
 ```
 
+Pour procéder à leur analyse, les auteurs ont décidé de tronquer les reads forward à 240 pb et les reads reverse à 160 pb. 
+
 ```{r}
-out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(240,160),
-              maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
-              compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
+out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, 
+                     truncLen=c(260, 160), 
+                     maxN=0, 
+                     maxEE=c(2, 5), 
+                     truncQ=2, rm.phix=TRUE,
+                     compress=TRUE, multithread=TRUE)
 head(out)
 ```
 
+# IV. Estimation du modèle d'erreur
+
+Dans cette section de l'analyse, une estimation du taux d'erreur est effectuée à partir des données. L'algorithme reconnaît les erreurs de substition de bases récurrentes et génère un modèle d'erreur qui sera utilisé pour corriger les potentielles erreurs de séquençage. 
+
 ```{r}
-errF <- learnErrors(filtFs, multithread=FALSE)
+errF <- learnErrors(filtFs, multithread=TRUE)
 ```
 
 ```{r}
 errR <- learnErrors(filtRs, multithread=TRUE)
 ```
+
+Il nous est ensuite possible de vérifier si le modèle d'erreur estimé correspond aux données observées. 
+
+```{r}
+plotErrors(errF, nominalQ=TRUE)
+```
+
+Les grahiques ci-dessus nous indiquent que le modèle d'erreur estimé (ligne noire) correspond aux données (points gris) pour tout les types de substitution. 
+
+Une fois cette vérification effectuée, le modèle d'erreur peut être appliqué pour distinguer les véritales variants biologiques des erreurs de séquençage.
+
+```{r}
+dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
+```
+
+```{r}
+dadaRs <- dada(filtRs, err=errR, multithread=TRUE)
+```
+
+```{r}
+dadaFs[[1]]
+```
+
+Une fois le modèle d'erreur appliqué l'algorithme regroupe les séquences avec 100% de similarité dans des ASV (Amplicon Sequence Variant). Ces analyses indiquent que 121 ASVs ont été obtenues. 
+
+# V. Alignement des séquences
+
+Il nous est ensuite possible d'aligner les reads forward et reverse afin de reconstituer les séquences complètes. 
+
+```{r}
+mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
+# Inspect the merger data.frame from the first sample
+head(mergers[[1]])
+```
+
+# VI. Table de séquences
+
+Cette étape nous permet de visualiser l'occurence des 32 ASVs obtenues après l'alignement des reads forward et reverse dans les 85 échantillons sous forme de tableau. 
+
+```{r}
+seqtab <- makeSequenceTable(mergers)
+dim(seqtab)
+```
+
+Ensuite, il est important de vérifier que la longueur des amplicons correspond à la réalité biologique. Ici, les auteurs ont ciblé les régions V3-V4 de l'ARNr 16S ce qui correspond à environ 379 pb. 
+
+```{r}
+# Inspect distribution of sequence lengths
+table(nchar(getSequences(seqtab)))
+```
+
+Le tableau ci-dessus nous indique que la plupart des ASVs obtenus font entre 386 et 391 pb. Ces résultats correspondent à ce qui était attendu. Cependant, nous remarquons aussi que plusieurs ASVs font moins de 300 pb. Ceci indique que ces derniers sont incomplets. Pour une analyse plus fiable, il aurait fallut enlever ces ASV du jeu de données avant d'avancer dans l'analyse.
+
+# VII. Suppression des chimères
+
+Cette étape sert à enlever les séquences issues de la combinaison de deux reads provenant de deux unités taxonomiques différentes durant la PCR.
+
+```{r}
+seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
+dim(seqtab.nochim)
+```
+
+Les analyses effectuées indiquent que le jeu de données utilisé ne contenait pas de séquences chimériques.
+
+Nous pouvons ensuite évaluer le ratio de conservation des lectures après suppression des chimères.
+
+```{r}
+sum(seqtab.nochim)/sum(seqtab)
+```
+
+Comme aucune séquence chimérique n'a été retrouvée parmi les 32 ASVs, nous obtenons un ratio de conservation de 1. Ceci indique que 100% des lectures sont conservées.
+
+# VIII. Suivi des lectures
+
+Cette étape permet d'évaluer notre progrès tout au long des différentes analyses et de visualiser le nombre de séquences conservées à chaque étape du pipeline. 
+
+```{r}
+getN <- function(x) sum(getUniques(x))
+track <- cbind(out, sapply(dadaFs, getN), sapply(dadaRs, getN), sapply(mergers, getN), rowSums(seqtab.nochim))
+# If processing a single sample, remove the sapply calls: e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
+colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
+rownames(track) <- sample.names
+head(track)
+```
+
+Le tableau ci-dessus nous indique que les échantillons ont suivi la même tendance au cours des analyses. Nous remarquons que la plus grande perte de données a lieu à l'étape de filtrage. Nous remarquons aussi que peu de séquences ont été perdues après les étapes de débruitage ce qui indique qu'il n'y avait pas beaucoup d'erreur de séquençage. 
+
+# IX. Attribution taxonomique
+
+Cette étape permet d'attribuer une taxonomie aux ASVs obtenues. Pour ce faire, les ASVs sont comparées à une base de données. Dans le cadre de cette étude, les auteurs ont utilisé la base de données Silva.
+
+```{r}
+taxa <- assignTaxonomy(seqtab.nochim, "~/Article_ADM/silva_nr_v132_train_set.fa.gz", multithread=TRUE)
+```
+
+La ligne de code suivante permet l'affichage des résultats de l'assignement taxonomique :
+
+```{r}
+taxa.print <- taxa # Removing sequence rownames for display only
+rownames(taxa.print) <- NULL
+head(taxa.print)
+```
+
+# X. Évaluation de la fiabilité
+
+Cette étape permet de comparer le nombre d'ASVs obtenues au nombre d'ASVs présentes dans une communauté fictive dont on connaît la composition. Dans le cadre de cette étude, la communauté fictive est l'échantillon SRR29455247 qui contient un total de 140 ASVs.
+
+```{r}
+unqs.mock <- seqtab.nochim["SRR29455247",]
+unqs.mock <- sort(unqs.mock[unqs.mock>0], decreasing=TRUE) # Drop ASVs absent in the Mock
+cat("DADA2 inferred", length(unqs.mock), "sample sequences present in the Mock community.\n")
+```
+Le résultat de cette analyse indique que DADA2 n'a trouvé que 3 ASVs au sein de la communauté fictive. Ceci indique un problème de sensibilité. En effet, un mauvais choix des paramètres truncLen et maxEE peut mener à un filtrage trop sévère qui aurait éliminé beaucoup de séquences rares. 
+
+```{r}
+mock.ref <- getSequences(file.path(path, "HMP_MOCK.v35.fasta"))
+match.ref <- sum(sapply(names(unqs.mock), function(x) any(grepl(x, mock.ref))))
+cat("Of those,", sum(match.ref), "were exact matches to the expected reference sequences.\n")
+```
+
+
+
+
 
