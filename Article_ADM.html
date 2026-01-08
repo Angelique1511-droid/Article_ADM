@@ -355,12 +355,13 @@ display: none;
 </div>
 
 
-<p>Note that the <code>echo = FALSE</code> parameter was added to the
-code chunk to prevent printing of the R code that generated the plot.
-#I. Préparation de l’environnement ## 1. Le chargement de la
-librairie</p>
+<div id="i.-préparation-de-lenvironnement" class="section level1">
+<h1>I. Préparation de l’environnement</h1>
+<div id="le-chargement-de-la-librairie" class="section level2">
+<h2>1. Le chargement de la librairie</h2>
 <pre><code>## Loading required package: Rcpp</code></pre>
 <pre><code>## [1] &#39;1.28.0&#39;</code></pre>
+</div>
 <div id="importation-des-données" class="section level2">
 <h2>2. Importation des données</h2>
 <p>Les fichiers FastQ.gz sont importés en utilisant le shortcut “upload”
@@ -564,6 +565,7 @@ fnFs &lt;- sort(list.files(path, pattern=&quot;_1.fastq&quot;, full.names = TRUE
 fnRs &lt;- sort(list.files(path, pattern=&quot;_2.fastq&quot;, full.names = TRUE))
 # Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
 sample.names &lt;- sapply(strsplit(basename(fnFs), &quot;_&quot;), `[`, 1)</code></pre>
+</div>
 </div>
 <div id="ii.-évaluation-de-la-qualité" class="section level1">
 <h1>II. Évaluation de la qualité</h1>
