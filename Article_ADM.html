@@ -12,7 +12,7 @@
 
 <meta name="date" content="2025-10-05" />
 
-<title>Article_ADM</title>
+<title>Article_ADM_AngeliquePARISOT</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -349,7 +349,7 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">Article_ADM</h1>
+<h1 class="title toc-ignore">Article_ADM_AngeliquePARISOT</h1>
 <h4 class="date">2025-10-05</h4>
 
 </div>
@@ -1020,10 +1020,32 @@ au sein de la communauté fictive. Ceci indique un problème de
 sensibilité. En effet, un mauvais choix des paramètres truncLen et maxEE
 peut mener à un filtrage trop sévère qui aurait éliminé beaucoup de
 séquences rares.</p>
+<p>La ligne de code suivante constitue l’étape finale de la validation
+technique du pipeline DADA2. Elle permet de comparer les séquences des
+ASVs obtenues avec les séquences de la communauté fictive.</p>
 <pre class="r"><code>mock.ref &lt;- getSequences(file.path(path, &quot;HMP_MOCK.v35.fasta&quot;))
 match.ref &lt;- sum(sapply(names(unqs.mock), function(x) any(grepl(x, mock.ref))))
 cat(&quot;Of those,&quot;, sum(match.ref), &quot;were exact matches to the expected reference sequences.\n&quot;)</code></pre>
 <pre><code>## Of those, 0 were exact matches to the expected reference sequences.</code></pre>
+<p>L’exécution de cette ligne de code indique qu’aucune des 3 séquences
+ASVs retrouvées dans la communauté fictive par DADA2 ne correspond aux
+séquences de référence du fichier “HMP_MOCK.v35.fasta” fourni par la
+pipeline DADA2.</p>
+<p>En effet, selon la littérature, le fichier “HMP_MOCK.v35.fasta” est
+spécifique aux régions V3-V5 de l’ARNr 16S. Or, dans le cadre de cette
+étude, les régions amplifiées par la PCR étaient les régions V3-V4.
+Comme les séquences des régions V3-V4 sont plus courtes que celles des
+régions V3-V5, la fonction match.ref ne peut être appliquée ici.</p>
+<p>Selon les analyses effectuées, il est possible de noter que la
+communauté fictive est composée de 140 ASVs. Ceci peut être dû à une
+mauvaise élimination des amorces par la pipeline cutadapt utilisée par
+les auteurs de cet article. En effet, la présence des amorces aux
+extrémités des séquences rend celles-ci plus longues que les séquences
+de référence empêchant ainsi leur comparaison au fichier
+“HMP_MOCK.v35.fasta”.</p>
+</div>
+<div id="xi.-exploration-de-la-diversité-microbienne-sous-phyloseq" class="section level1">
+<h1>XI. Exploration de la diversité microbienne sous Phyloseq</h1>
 </div>
 
 
