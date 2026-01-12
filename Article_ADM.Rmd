@@ -12,7 +12,7 @@ Joel Sánchez-Gallego, Nathaniel P. Curtis,  Hans W. Paerl et Ryan W. Paerl
 
 ## Introduction
 
-Les cyanobactéries sont une composante du phytoplancton. Retrouvées dans de nombreux milieux aquatiques, ces bactéries photosynthétiques jouent un rôle essentiel dans les écosystèmes et sont des acteurs principaux de la production primaire. Outre leur implication dans la production primaire, les cyanobactéries sont la source d’une variété de métabolites secondaires et sont souvent indicatrices de divers changements environnementaux.
+Les cyanobactéries sont une composante du phytoplancton. Retrouvées dans de nombreux milieux aquatiques, ces bactéries photosynthétiques jouent un rôle essentiel dans les écosystèmes et sont des acteurs principaux de la production primaire. Outre leur implication dans la production primaire, les cyanobactéries sont la source d’une variété de métabolites secondaires et sont souvent indicatrices de changements environnementaux.
 
 Bien que les écotypes de cyanobactéries pélagiques marines et dulçaquicoles soient les mieux étudiés, de récentes études ont mis en évidence l’existence d’écotypes estuariens, qui présenteraient des modes de vie distincts.
 
