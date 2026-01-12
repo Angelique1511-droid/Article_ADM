@@ -12,7 +12,6 @@ timezone: Europe/Paris
 
 header_pages: 
   - index.md
-  - Article_ADM.html
 
 plugins: jekyll-seo-tag
 
