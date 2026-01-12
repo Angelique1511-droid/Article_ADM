@@ -1,5 +1,5 @@
 ---
-title: "Article_ADM"
+title: "Article_ADM_AngeliquePARISOT"
 output: html_document
 date: "2025-10-05"
 ---
@@ -7,50 +7,74 @@ date: "2025-10-05"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+# Nouvelles perspectives sur les picocyanobactéries et la diversité cyanobactérienne sous-étudiée du système d'Albemarle Pamlico Sound, Caroline du Nord, États-Unis
+Joel Sánchez-Gallego, Nathaniel P. Curtis,  Hans W. Paerl et Ryan W. Paerl
 
-# I. Préparation de l'environnement
-## 1. Le chargement de la librairie
+## Introduction
+
+Les cyanobactéries sont une composante du phytoplancton. Retrouvées dans de nombreux milieux aquatiques, ces bactéries photosynthétiques jouent un rôle essentiel dans les écosystèmes et sont des acteurs principaux de la production primaire. Outre leur implication dans la production primaire, les cyanobactéries sont la source d’une variété de métabolites secondaires et sont souvent indicatrices de divers changements environnementaux.
+
+Bien que les écotypes de cyanobactéries pélagiques marines et dulçaquicoles soient les mieux étudiés, de récentes études ont mis en évidence l’existence d’écotypes estuariens, qui présenteraient des modes de vie distincts.
+
+Le système de l'Albemarle-Pamlico Sound (APES), deuxième plus vaste estuaire du territoire continental Américain, constitue un continuum eau douce - eau salée, idéale pour étudier la diversité de cyanobactéries en milieu estuarien. 
+
+Cette étude est basée sur 4 grands axes principaux: 
+1. Étudier la diversité de cyanobactéries, via le séquençage de l’ARNr 16S à partir d’échantillons prélevés dans différentes parties de l’APES.
+2. Évaluer la contribution des picocyanobactéries à la biomasse phytoplanctonique.
+3. Identifier des écotypes potentiels et comprendre comment les variables environnementales influencent la composition de ces communautés.
+4. Détecter la présence de genres potentiellement producteurs de toxines. 
+
+Les analyses effectuées ici porteront uniquement sur l'étude de la diversité de cyanobactéries de l’APES.
+
+## Matériel et méthodes
+### Récolte des échantillons
+
+Des échantillons d’eau de surface ont été prélevés aux stations de l’estuaire de la rivière Neuse (N) et de l’estuaire du Pamlico Sound (PS) dans le cadre du projet de modélisation et de suivi de l’estuaire de la Neuse (ModMon) (Luettich et al., 2000 ; Buzzelli et al., 2001 ; Paerl et al., 2010), ainsi qu’aux stations situées dans l’Albemarle Sound et ses affluents (AL), dans le cadre du programme de suivi environnemental du North Carolina Department of Environmental Quality (NCDEQ). Les échantillons, conservés sur glace dans des glacières opaques ont été transportés à la North Carolina State University à Raleigh pour traitement. 
+
+### Extraction et traitement de l’ADN
+
+Les échantillons ont été filtrés sur des filtres Supor de 0,22 μm (Pall; Port Washington, NY, United States). L’extraction d’ADN a été effectuée à l’aide d’un kit PowerWater (Qiagen; Dusseldorf, Germany) à partir des filtres. Les régions V3-V4 du gène codant pour l’ARNr 16S ont été amplifiées à partir de l’ADN extrait à l’aide d’amorces spécifiques aux cyanobactéries (CYB359-F : 5’-GGGGAATYTTCCGCAATGGG-3′ ; CYB781-R1 : 5’-GACTACTGGGGTATCTAATCCCATT-3′ ; CYB781-R2 : 5’-GACTACAGGGGTATCTAATCCCTTT-3′). 
+
+### Traitement des séquences et analyses statistiques 
+#### Préparation de l'environnement
+##### Chargement de la librairie
 
 ```{r, echo=FALSE}
 library(dada2); packageVersion("dada2")
 ```
 
-## 2. Importation des données
+##### Importation des données
 
-Les fichiers FastQ.gz sont importés en utilisant le shortcut "upload" de R studio après avoir les avoir téléchargé de l'ENA (European Nucleotide Archive).
+Les fichiers FastQ.gz sont importés en utilisant le shortcut "upload" de R studio après les avoir téléchargés de l'ENA (European Nucleotide Archive).
 
 ```{r, echo=FALSE}
 metadata <- read.csv2("~/Article_ADM/SraRunTable.csv", header = TRUE, sep = ",")
 ```
 
-Les fichiers FastQ.gz sont ensuite rendus accessibles.
+Les fichiers FastQ.gz sont ensuite rendus accessibles en effectuant la commande suivante dans le terminal.
 
 system("gunzip ~/Article_ADM/article_data/*.gz")
 
-
-
-## 3. Définir le chemin vers les fichiers FastQ
+##### Définir le chemin vers les fichiers FastQ
 
 ```{r, echo=FALSE}
-path <- "~/Article_ADM" # CHANGE ME to the directory containing the fastq files after unzipping.
+path <- "~/Article_ADM"
 list.files(path)
 ```
 
-## 4. Organisation des fichiers FastQ
+##### Organisation des fichiers FastQ
 
 Les fichiers FastQ sont ensuite triés en reads forward et reverse. Les reads forward sont indiqués par le présence de "_1" et les reads reverse, eux, par la présence de "_2".
 
 Les noms des fichiers sont ensuite extraits afin de faciliter la manipulation des données.
 
 ```{r}
-# Forward and reverse fastq filenames have format: SAMPLENAME_R1_001.fastq and SAMPLENAME_R2_001.fastq
 fnFs <- sort(list.files(path, pattern="_1.fastq", full.names = TRUE))
 fnRs <- sort(list.files(path, pattern="_2.fastq", full.names = TRUE))
-# Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
 sample.names <- sapply(strsplit(basename(fnFs), "_"), `[`, 1)
 ```
 
-# II. Évaluation de la qualité
+#### Évaluation de la qualité
 
 La qualité des données de séquençage est ensuite évaluée en analysant l'évaluation des Qscore le long des lectures. 
 
@@ -58,41 +82,39 @@ La qualité des données de séquençage est ensuite évaluée en analysant l'é
 plotQualityProfile(fnFs[1:2])
 ```
 
-Les reads forward des échantillons SRR29455238 et SRR29455239 sont de bonne qualité jusqu'à environ 200 cycles de séquençage, avec un Qscore de plus de 30. Cependant, la qualité des reads diminue rapidement aux alentours des 200 cycles avec une forte instabilité de lecture à partir de 250 cycles.
+Il apparaît que les reads forward des échantillons SRR29455238 et SRR29455239 sont de bonne qualité jusqu'à environ 200 cycles de séquençage, avec un Qscore de plus de 30. Cependant, la qualité des reads diminue rapidement aux alentours des 200 cycles avec une forte instabilité de lecture à partir de 250 cycles.
 
 ```{r}
 plotQualityProfile(fnRs[1:2])
 ```
-Ces derniers graphiques indiquent que la qualité des reads reverse des échantillons SRR29455238 et SRR29455239 se détériore plus rapidement que celle des reads forward. À partir 150 cycles de séquençage, nous remarquons que le Qscore diminue rapidement.
+Ces derniers graphiques indiquent, quant à eux, que la qualité des reads reverse des échantillons SRR29455238 et SRR29455239 se détériore plus rapidement que celle des reads forward. À partir 150 cycles de séquençage, il est notable que le Qscore diminue rapidement.
 
-# III. Filtrage et rognage
+#### Filtrage et rognage
 
-Les profiles de qualité obtenus nous permettent par la suite de définir les paramètres de tronquage. Les séquences doivent être tronquées avant l'effondrement de la qualité afin de conserver la qualité des reads tout en gardant une longueur qui permettra le chevauchement des reads forward et reverse.
-
+Les profiles de qualité obtenus permettent, par la suite, de définir les paramètres de troncage. Les séquences doivent être tronquées avant l'effondrement de la qualité afin de conserver la qualité des reads tout en gardant une longueur qui permettra le chevauchement des reads forward et reverse lors de la fusion des deux types de reads.
 
 ```{r}
-# Place filtered files in filtered/ subdirectory
 filtFs <- file.path(path, "filtered", paste0(sample.names, "_F_filt.fastq.gz"))
 filtRs <- file.path(path, "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
 names(filtFs) <- sample.names
 names(filtRs) <- sample.names
 ```
 
-Pour procéder à leur analyse, les auteurs ont décidé de tronquer les reads forward à 240 pb et les reads reverse à 160 pb. 
+Les paramètres de troncage définis par les auteurs de cet article (truncLen = 240,160, maxEE = 2,5) ne permettant pas un chevauchement assez long, ont donc été ajustés à 280 pb pour les reads forward et 210 pb pour les reads reverse. 
 
 ```{r}
 out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, 
-                     truncLen=c(260, 160), 
+                     truncLen=c(280, 210), 
                      maxN=0, 
-                     maxEE=c(2, 5), 
+                     maxEE=c(3, 5), 
                      truncQ=2, rm.phix=TRUE,
                      compress=TRUE, multithread=TRUE)
 head(out)
 ```
 
-# IV. Estimation du modèle d'erreur
+#### Estimation du modèle d'erreur
 
-Dans cette section de l'analyse, une estimation du taux d'erreur est effectuée à partir des données. L'algorithme reconnaît les erreurs de substition de bases récurrentes et génère un modèle d'erreur qui sera utilisé pour corriger les potentielles erreurs de séquençage. 
+Une estimation du taux d'erreur est ensuite effectuée à partir des données. L'algorithme reconnaît les erreurs de substition de bases récurrentes et génère un modèle d'erreur qui sera utilisé pour corriger les potentielles erreurs de séquençage. 
 
 ```{r}
 errF <- learnErrors(filtFs, multithread=TRUE)
@@ -102,15 +124,15 @@ errF <- learnErrors(filtFs, multithread=TRUE)
 errR <- learnErrors(filtRs, multithread=TRUE)
 ```
 
-Il nous est ensuite possible de vérifier si le modèle d'erreur estimé correspond aux données observées. 
+Il est ensuite possible de vérifier si le modèle d'erreur estimé correspond aux données observées. 
 
 ```{r}
 plotErrors(errF, nominalQ=TRUE)
 ```
 
-Les grahiques ci-dessus nous indiquent que le modèle d'erreur estimé (ligne noire) correspond aux données (points gris) pour tout les types de substitution. 
+Les grahiques ci-dessus indiquent que le modèle d'erreur estimé (ligne noire) correspond aux données (points gris) pour tout les types de substitution. 
 
-Une fois cette vérification effectuée, le modèle d'erreur peut être appliqué pour distinguer les véritales variants biologiques des erreurs de séquençage.
+Une fois cette vérification effectuée, le modèle d'erreur peut être appliqué pour distinguer les véritables variants biologiques des erreurs de séquençage.
 
 ```{r}
 dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
@@ -124,21 +146,18 @@ dadaRs <- dada(filtRs, err=errR, multithread=TRUE)
 dadaFs[[1]]
 ```
 
-Une fois le modèle d'erreur appliqué l'algorithme regroupe les séquences avec 100% de similarité dans des ASV (Amplicon Sequence Variant). Ces analyses indiquent que 121 ASVs ont été obtenues. 
+#### Alignement des séquences
 
-# V. Alignement des séquences
-
-Il nous est ensuite possible d'aligner les reads forward et reverse afin de reconstituer les séquences complètes. 
+Il est ensuite possible d'aligner les reads forward et reverse afin de reconstituer les séquences complètes. 
 
 ```{r}
 mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
-# Inspect the merger data.frame from the first sample
 head(mergers[[1]])
 ```
 
-# VI. Table de séquences
+#### Table de séquences
 
-Cette étape nous permet de visualiser l'occurence des 32 ASVs obtenues après l'alignement des reads forward et reverse dans les 85 échantillons sous forme de tableau. 
+Les données sont ensuites regroupées dans un tableau permettant de visualiser l'occurence des ASVs obtenues après l'alignement des reads forward et reverse dans les 85 échantillons sous forme de tableau. 
 
 ```{r}
 seqtab <- makeSequenceTable(mergers)
@@ -148,72 +167,73 @@ dim(seqtab)
 Ensuite, il est important de vérifier que la longueur des amplicons correspond à la réalité biologique. Ici, les auteurs ont ciblé les régions V3-V4 de l'ARNr 16S ce qui correspond à environ 379 pb. 
 
 ```{r}
-# Inspect distribution of sequence lengths
 table(nchar(getSequences(seqtab)))
 ```
 
-Le tableau ci-dessus nous indique que la plupart des ASVs obtenus font entre 386 et 391 pb. Ces résultats correspondent à ce qui était attendu. Cependant, nous remarquons aussi que plusieurs ASVs font moins de 300 pb. Ceci indique que ces derniers sont incomplets. Pour une analyse plus fiable, il aurait fallut enlever ces ASV du jeu de données avant d'avancer dans l'analyse.
+Le tableau ci-dessus indique que la plupart des ASVs se situent entre 400 et 430 ce qui ne correspond pas au résultat attendu. En effet, dans la littérature, il est souvent retrouvé que les régions V3-V4 de l'ARNr 16S de cyanobacéries contiennent des insertions spécifiques allongeant ainsi cette portion du gène. 
 
-# VII. Suppression des chimères
+Il est aussi notable que plusieurs ASVs font moins de 300 pb. Ceci indique que ces dernières sont incomplètes. 
 
-Cette étape sert à enlever les séquences issues de la combinaison de deux reads provenant de deux unités taxonomiques différentes durant la PCR.
+#### Suppression des chimères
+
+Afin d'assurer la fiabilité de l'analyse, il est nécessaire d'enlever les séquences issues de la combinaison de deux reads provenant de deux unités taxonomiques différentes durant la PCR.
 
 ```{r}
 seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
 dim(seqtab.nochim)
 ```
 
-Les analyses effectuées indiquent que le jeu de données utilisé ne contenait pas de séquences chimériques.
-
-Nous pouvons ensuite évaluer le ratio de conservation des lectures après suppression des chimères.
+Cette analyse révèle que le logiciel a identifié 16369 séquences chimériques ce qui constitue 82,5% du jeu de données. En effet, les échantillons environnementaux riches en cyanobactéries favorisent les erreurs de fusion durant la PCR comme celles-ci sont très proches génétiquement. 
 
 ```{r}
 sum(seqtab.nochim)/sum(seqtab)
 ```
+ Le ratio de conservation des lectures après suppression des chimères indique que 71,6% des séquences ont été conservées.  
 
-Comme aucune séquence chimérique n'a été retrouvée parmi les 32 ASVs, nous obtenons un ratio de conservation de 1. Ceci indique que 100% des lectures sont conservées.
+#### Suivi des lectures
 
-# VIII. Suivi des lectures
-
-Cette étape permet d'évaluer notre progrès tout au long des différentes analyses et de visualiser le nombre de séquences conservées à chaque étape du pipeline. 
+Il est ensuite possible d'évaluer le progrès effecué tout au long des différentes analyses et de visualiser le nombre de séquences conservées à chaque étape du pipeline. 
 
 ```{r}
 getN <- function(x) sum(getUniques(x))
 track <- cbind(out, sapply(dadaFs, getN), sapply(dadaRs, getN), sapply(mergers, getN), rowSums(seqtab.nochim))
-# If processing a single sample, remove the sapply calls: e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
 colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
 rownames(track) <- sample.names
 head(track)
 ```
 
-Le tableau ci-dessus nous indique que les échantillons ont suivi la même tendance au cours des analyses. Nous remarquons que la plus grande perte de données a lieu à l'étape de filtrage. Nous remarquons aussi que peu de séquences ont été perdues après les étapes de débruitage ce qui indique qu'il n'y avait pas beaucoup d'erreur de séquençage. 
+Le tableau ci-dessus indique que les échantillons ont suivi la même tendance au cours des analyses. La plus grande perte de données a lieu à l'étape de filtrage. Les étapes de débruitage conservent la quasi-totalité des séquences filtrées, ce qui indique que les modèles d'erreur sont bien calibrés et adaptés au jeu de données.
 
-# IX. Attribution taxonomique
+#### Attribution taxonomique
 
-Cette étape permet d'attribuer une taxonomie aux ASVs obtenues. Pour ce faire, les ASVs sont comparées à une base de données. Dans le cadre de cette étude, les auteurs ont utilisé la base de données Silva.
+Une fois les séqeunces regroupées et filtrées, il est possible d'attribuer une taxonomie aux ASVs obtenues. Pour ce faire, les ASVs sont comparées à une base de données, ici, Silva (silva_nr_v132_train_set.fa.gz).
 
 ```{r}
 taxa <- assignTaxonomy(seqtab.nochim, "~/Article_ADM/silva_nr_v132_train_set.fa.gz", multithread=TRUE)
 ```
 
-La ligne de code suivante permet l'affichage des résultats de l'assignement taxonomique :
+La commande suivante permet l'affichage des résultats de l'assignement taxonomique :
 
 ```{r}
-taxa.print <- taxa # Removing sequence rownames for display only
+taxa.print <- taxa 
 rownames(taxa.print) <- NULL
 head(taxa.print)
 ```
 
-# X. Évaluation de la fiabilité
+Le tableau ci-dessus indique une domination du genre 'Cyanobium_PCC-6307'. La présence de 'Chloroplast' est aussi notable. En effet, lors du séquençage du 16S, il arrive que les amorces utilisées amplifient aussi l'ADN chloroplastique du phytoplancton eucaryote car le chloroplaste eucaryote dérive ancestralement de celui des cyanobactéries. 
 
-Cette étape permet de comparer le nombre d'ASVs obtenues au nombre d'ASVs présentes dans une communauté fictive dont on connaît la composition. Dans le cadre de cette étude, la communauté fictive est l'échantillon SRR29455247 qui contient un total de 140 ASVs.
+#### Évaluation de la fiabilité
+
+Le nombre d'ASVs obtenues est ensuite comparé au nombre d'ASVs présentes dans une communauté fictive dont on connaît la composition. Dans le cadre de cette étude, la communauté fictive est l'échantillon SRR29455247 qui contient un total de 140 ASVs.
 
 ```{r}
 unqs.mock <- seqtab.nochim["SRR29455247",]
-unqs.mock <- sort(unqs.mock[unqs.mock>0], decreasing=TRUE) # Drop ASVs absent in the Mock
+unqs.mock <- sort(unqs.mock[unqs.mock>0], decreasing=TRUE) 
 cat("DADA2 inferred", length(unqs.mock), "sample sequences present in the Mock community.\n")
 ```
-Le résultat de cette analyse indique que DADA2 n'a trouvé que 3 ASVs au sein de la communauté fictive. Ceci indique un problème de sensibilité. En effet, un mauvais choix des paramètres truncLen et maxEE peut mener à un filtrage trop sévère qui aurait éliminé beaucoup de séquences rares. 
+Le résultat de cette analyse indique que DADA2 a trouvé que 129 ASVs au sein de la communauté fictive constituant 92% des sèquences réellement présentes. Ce résultat atteste de la haute résolution taxonomique de cette étude. Les 11 ASVs manquantes peuvent être des séquences rares, éliminées lors de l'étape de filtrage. 
+
+La ligne de code suivante constitue l'étape finale de la validation technique du pipeline DADA2. Elle permet de comparer les séquences des ASVs obtenues avec les séquences de la communauté fictive. 
 
 ```{r}
 mock.ref <- getSequences(file.path(path, "HMP_MOCK.v35.fasta"))
@@ -221,9 +241,209 @@ match.ref <- sum(sapply(names(unqs.mock), function(x) any(grepl(x, mock.ref))))
 cat("Of those,", sum(match.ref), "were exact matches to the expected reference sequences.\n")
 ```
 
+L'exécution de cette ligne de code indique qu'aucune des ASVs retrouvées dans la communauté fictive par DADA2 ne correspond aux séquences de référence du fichier "HMP_MOCK.v35.fasta" fourni par la pipeline DADA2.   
+
+En effet, selon la littérature, le fichier "HMP_MOCK.v35.fasta" est spécifique aux régions V3-V5 de l'ARNr 16S. Or, dans le cadre de cette étude, les régions amplifiées par la PCR étaient les régions V3-V4. Comme les séquences des régions V3-V4 sont plus courtes que celles des régions V3-V5, la fonction match.ref ne peut être appliquée ici. 
+
+Ceci peut aussi être dû à une mauvaise élimination des amorces par la pipeline cutadapt utilisée par les auteurs de cet article. En effet, la présence des amorces aux extrémités des séquences rend celles-ci plus longues que les séquences de référence empêchant ainsi leur comparaison au fichier "HMP_MOCK.v35.fasta".
+
+#### Exploration de la diversité microbienne sous Phyloseq
+##### Chargement des librairies
+
+```{r,echo=FALSE}
+library(phyloseq); packageVersion("phyloseq")
+library(Biostrings); packageVersion("Biostrings")
+library(ggplot2); packageVersion("ggplot2")
+library(ggpubr)
+```
+
+La commande suivante sert à améliorer l'apparence visuelle des graphiques qui seront générés.
+
+```{r}
+theme_set(theme_bw())
+```
+
+##### Préparation des métadonnées
+
+Dans un premier temps, les métadonnées sont chargées. Une première vérification est effectuée afin de s'assurer que les noms des lignes du tableau nouvellement crée correspondent aux noms dans le tableau seqtab.nochim.
+
+```{r}
+samdf <- read.csv("SraRunTable.csv", sep=",", header=TRUE)
+rownames(samdf) <- samdf[,1]
+all(rownames(samdf) %in% rownames(seqtab.nochim))
+```
+
+##### Création de l'objet Phyloseq
+
+L'objet Phyloseq, à partir duquel des graphiques d'abondance et d'indice de diversité seront générés, est ensuite crée.
+
+```{r}
+ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), 
+               sample_data(samdf), 
+               tax_table(taxa))
+dna <- Biostrings::DNAStringSet(taxa_names(ps))
+names(dna) <- taxa_names(ps)
+ps <- merge_phyloseq(ps, dna)
+taxa_names(ps) <- paste0("ASV", seq(ntaxa(ps)))
+ps
+```
+
+```{r}
+samdf$Type_Echantillon <- ifelse(rownames(samdf) == "SRR29455247", "Mock", "Environnement")
+```
+
+```{r}
+sample_data(ps) <- sample_data(samdf)
+```
+
+```{r}
+richness_data <- estimate_richness(ps, measures = c("Observed", "Shannon"))
+richness_data$Sample.Name <- rownames(richness_data)
+```
 
 
+```{r}
+richness_data$Groupe <- gsub("[0-9]+", "", richness_data$Sample.Name)
+richness_data_filtered <- subset(richness_data, Groupe %in% c("AL", "N", "PS"))
+my_comparisons_final <- list( c("AL", "N"), c("AL", "PS"), c("N", "PS") )
+table(richness_data_filtered$Groupe)
+```
+
+##### Analyse des données
+
+Avant de calculer les indices de diversité et d'abondance, il est nécessaire d'extraire uniquement les séquences appartenant aux cyanobactéries.
+
+```{r}
+get_taxa_unique(ps, "Phylum")
+```
+
+```{r}
+ps_cyano <- subset_taxa(ps, Phylum == "Cyanobacteria")
+n_asv <- ntaxa(ps_cyano)
+print(paste("Nombre d'ASV Cyano trouvés :", n_asv))
+
+if (n_asv > 0) {
+  metadata <- as(sample_data(ps_cyano), "data.frame")
+  metadata$Groupe <- gsub("[0-9]+", "", rownames(metadata))
+  sample_data(ps_cyano) <- sample_data(metadata)
+  
+  print("Succès : La colonne Groupe a été créée à partir des noms d'échantillons.")
+  print(table(sample_data(ps_cyano)$Groupe)) 
+}
+```
+
+###### Diversité alpha
+
+```{r}
+rich_cy <- estimate_richness(ps_cyano, measures = c("Shannon", "Simpson"))
+rich_cy <- as.data.frame(rich_cy)
+meta_interne <- as.data.frame(as(sample_data(ps_cyano), "data.frame"))
+rich_cy_final <- cbind(rich_cy, Groupe = meta_interne$Groupe)
+print("Vérification des colonnes disponibles :")
+print(colnames(rich_cy_final))
+```
+
+```{r}
+rich_cy_final <- as.data.frame(estimate_richness(ps_cyano, measures = c("Shannon", "Simpson")))
+rich_cy_final$Groupe <- samdf$Groupe[match(rownames(rich_cy_final), rownames(samdf))]
+if(all(is.na(rich_cy_final$Groupe))) {
+  rich_cy_final$Groupe <- ifelse(grepl("AL", samdf$Sample.Name), "AL",
+                          ifelse(grepl("N", samdf$Sample.Name), "N",
+                          ifelse(grepl("PS", samdf$Sample.Name), "PS", NA)))
+}
+print(table(rich_cy_final$Groupe))
+```
+
+```{r}
+rich_plot <- subset(rich_cy_final, Groupe %in% c("AL", "N", "PS"))
+ggplot(rich_plot, aes(x = Groupe, y = Shannon, fill = Groupe)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.2, alpha = 0.5) +
+  stat_compare_means(comparisons = list(c("AL", "N"), c("AL", "PS"), c("N", "PS")), label = "p.signif") +
+  theme_bw() +
+  scale_fill_manual(values = c("AL" = "#F8766D", "N" = "#00BFC4", "PS" = "#C77CFF")) +
+  labs(title = "Shannon Diversity: Cyanobacteria by Station", x = "Stations", y = "Shannon Index")
+```
+
+Il est notable que les indices de Shannon sont élevés et se situent majoritairement entre 3,5 et 5,0. Ceci indique une grande richesse taxonomique. La médiane du site AL est la plus élevée suggérant qu’il s’agit du site avec la plus grande diversité de cyanobactéries. Il est aussi notable que la plus grande variabilité est retrouvée au site N. Ceci indique que la diversité au sein des échantillons prélevés de la rivière Neuse varie largement d’un échantillon à l’autre. Enfin, le site PS affiche la diversité médiane la plus basse. 
+
+Il apparaît aussi que la diversité interne à chaque station est trop élevée pour affirmer que la diversité cyanobactérienne diffère significativement d’une station à l’autre (cf. ns : Non Significatif). De ce fait, les trois sites sont considérés comme ayant une diversité équivalente. 
 
 
+```{r}
+ggplot(rich_plot, aes(x = Groupe, y = Simpson, fill = Groupe)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.2, alpha = 0.5) +
+  stat_compare_means(comparisons = list(c("AL", "N"), c("AL", "PS"), c("N", "PS")), 
+                     label = "p.signif") +
+  theme_bw() +
+  scale_fill_manual(values = c("AL" = "#F8766D", "N" = "#00BFC4", "PS" = "#C77CFF")) +
+  labs(title = "Simpson Diversity: Cyanobacteria by Station", 
+       x = "Stations", 
+       y = "Simpson Index")
+```
 
+L’analyse des indices de Simpson indique que la majorité des valeurs se situe entre 0,94 et 0,99. Un indice de Simpson proche de 1 indique généralement une communauté stable où quelques taxons uniquement sont dominants. Comme indiqué sur le graphique ci-dessus, le site AL présente la valeur médiane la plus élevée. Il s’agit donc de la station avec la dominance la plus constante. Le site PS, quant à lui, affiche l’indice médian le plus faible ce qui suggère qu’une seule espèce, vraisemblablement ‘Cyanobium_PCC-6307’, domine plus fortement ce site. 
 
+Il est aussi notable qu’il existe une différence significative entre AL et PS (cf. *). Ceci suggère que les taxons qui dominent AL sont différents de celui ou ceux qui dominent le site PS. 
+
+###### Diversité bêta
+
+La diversité bêta peut aussi être évaluée en calculant les distances de Bray-Curtis.
+
+```{r}
+sample_data(ps_cyano)$Groupe <- rich_cy_final$Groupe[match(sample_names(ps_cyano), rownames(rich_cy_final))]
+table(sample_data(ps_cyano)$Groupe)
+```
+
+Afin de visualiser la différence de composition entre les différents sites, une Anlayse Par Composante Principale est effectuée. 
+
+```{r}
+out.pcoa <- ordinate(ps_cyano, method = "PCoA", distance = "bray")
+plot_ordination(ps_cyano, out.pcoa, color = "Groupe") + 
+  geom_point(size = 4, alpha = 0.8) +
+  stat_ellipse() + 
+  theme_bw() +
+  scale_color_manual(values = c("AL" = "#F8766D", "N" = "#00BFC4", "PS" = "#C77CFF")) +
+  labs(title = "Structure des communautés de Cyanobactéries par Station")
+```
+
+D’après le graphique ci-dessus, il est remarquable que les deux axes présentés expliquent 35,1% de la différence entre les données. Les ellipses de confiance des sites AL et N se recouvrent presque totalement indiquant que ces deux sites ont des communautés cyanobactériennes très proches voire similaires. L’ellipse de confiance du site PS se rapproche plus de l’axe 1 que celles des deux autres sites. Ceci indique que le site PS possède une signature biologique légèrement distincte des deux autres sites comme indiqué par l’indice de Simpson.
+
+###### Abondance relative
+
+Afin de visualiser l'abondance relative de chacun des trois sites, les 10 genres les plus abondants ont été sélectionnés.
+
+```{r}
+ps_rel <- transform_sample_counts(ps_cyano, function(x) x / sum(x))
+ps_genus <- tax_glom(ps_rel, "Genus")
+top10_names <- names(sort(taxa_sums(ps_genus), decreasing = TRUE)[1:10])
+ps_top10 <- prune_taxa(top10_names, ps_genus)
+ps_top10_clean <- subset_samples(ps_top10, !is.na(Groupe) & Groupe != "NA")
+plot_bar(ps_top10_clean, x = "Groupe", fill = "Genus") + 
+  geom_bar(aes(color = Genus, fill = Genus), stat = "identity", position = "stack") +
+  theme_bw() +
+  labs(title = "Top 10 Cyanobacteria Genera by Station", x = "Stations", y = "Relative Abundance")
+```
+
+Il est remarquable que le genre ‘Cyanobium_PCC-6307’ domine massivement le profil d’abondance de chaque site. Le site N affiche une abondance relative bien plus élevée que les autres sites. Ceci explique les résultats obtenus de l’analyse des indices de Shannon. Le site AL possède, quant à lui, l’abondance relative totale la plus faible suggérant un environnement moins riche en cyanobactéries ou une communauté plus dispersée dans l’espace.
+
+Bien que ‘Cyanobium_PCC-6307’ est le genre dominant au sein des trois sites, la présence d’une base diversifiée composée de genres minoritaires tels que ‘Synechococcus_CC9902’, ‘Synechocystis_PCC-6803’, ‘Prochlorothrix PCC-9006’ et ‘Nodosilinea_ PCC-7104’ 
+
+## Conclusion
+
+L'ensemble des analyses effectuées montre que l’estuaire de la rivière Neuse (N), l’estuaire du Pamlico Sound (PS) et l’Albemarle Sound et ses affluents (AL) ont une composition taxonomique similaire lorsqu'il s'agit de cyanobactéries. Un total de 2642 ASVs ont été affiliées aux cyanobactéries ce qui indique que la biomasse phytoplanctonique du système de l'Albemarle-Pamlico Sound est composé d'une grande diversité de cyanobactéries. Avec une forte dominance du genre Cyanobium, les trois sites étudiés présentent une diversité secondaire plus discrète, majoritairement composée de cyanobactéries du genre Nodosilinea et de l'ordre des Synechococcales. 
+
+Il a aussi été trouvé que l'Albemarle Sound et ses affluents présentent une biomasse moins riche en cyanobactérie que les deux autres sites. Ceci pourrait être dû à des conditions physico-chimiques et environnementales moins propices au développement de cyanobactéries.
+
+La connaissance actuelle de la diversité, de l’écologie et de l’impact des cyanobactéries dans les estuaires reste tout de même limitée mais cette étude y apporte une contribution importante.
+
+## Bibliographie
+
+Sánchez-Gallego J, Curtis NP, Paerl HW and Paerl RW (2025) New perspectives on picocyanobacteria and understudied cyanobacterial diversity in the Albemarle Pamlico sound system, North Carolina, USA. Front. Microbiol. 16:1539050. doi: 10.3389/fmicb.2025.1539050
+
+Luettich, R. A., McNinch, J. E., Paerl, H. W., Peterson, C. H., Wells, J. T., Alperin, M. J., et al. (2000). Neuse River estuary modeling and monitoring project stage 1: Hydrography and circulation, water column nutrients and productivity, sedimentary processes and benthic-pelagic coupling, and benthic ecology. Report UNC-WRRI-2000-325B. Raleigh, NC: Water Resources Research Institute of the University of North Carolina.
+
+Buzzelli, C. P., Luettich, R. A., Paerl, H. W., Fear, J., Fleming, J., Twomey, L., et al. (2001). Neuse River estuary modeling and monitoring project phase 2: monitoring of hydrography and water quality, circulation, phytoplankton physiology, and sediment-water coupling. Report UNC-WRRI-426 Water Resources Research Institute of the University of North Carolina. Available at: https://api.semanticscholar.org/CorpusID:135306833
+
+Paerl, H. W., Rossignol, K. L., Hall, S. N., Peierls, B. L., and Wetz, M. S. (2010). Phytoplankton community indicators of short- and long-term ecological change in the Anthropogenically and climatically impacted Neuse River estuary, North Carolina, USA. Estuar. Coasts 33, 485–497. doi: 10.1007/s12237-009-9137-0
