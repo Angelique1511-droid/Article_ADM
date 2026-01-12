@@ -1,0 +1,23 @@
+title: Analyse Bioinformatique
+description: Analyse bioinformatique de l'article "Nouvelles perspectives sur les picocyanobactéries et la diversité cyanobactérienne sous-étudiée du système d’Albemarle Pamlico Sound, Caroline du Nord, États-Unis"
+author: Angélique Parisot
+
+theme: jekyll-theme-cayman
+
+markdown: kramdown
+highlighter: rouge
+
+lang: fr
+timezone: Europe/Paris
+
+header_pages: 
+  - index.md
+  - Article_ADM.html
+
+plugins: jekyll-seo-tag
+
+exclude: 
+  - "*.Rmd
+  - "*.Rproj"
+  - ".Rhistory"
+  - ".gitignore"
